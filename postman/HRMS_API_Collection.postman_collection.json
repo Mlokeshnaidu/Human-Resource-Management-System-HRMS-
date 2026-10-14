@@ -1,0 +1,436 @@
+{
+  "info": {
+    "_postman_id": "99f8d103-62a3-4889-9a28-ee1002347102",
+    "name": "HRMS Enterprise Full-Stack API Collection",
+    "description": "Complete Postman API Collection for Human Resource Management System (HRMS) covering Authentication, Employees, Attendance, Leaves, Payroll, Slips, Reports, and Audit Trails.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login - Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@hrms.com\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login - HR",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hr@hrms.com\",\n  \"password\": \"Hr@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login - Employee",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"employee@hrms.com\",\n  \"password\": \"Employee@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Employee@123\",\n  \"newPassword\": \"NewSecret@2026\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/change-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "change-password"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Employee Management",
+      "item": [
+        {
+          "name": "List All Employees",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/employees?department=ALL&status=ALL",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees"],
+              "query": [
+                { "key": "department", "value": "ALL" },
+                { "key": "status", "value": "ALL" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Employee Details",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/employees/HRMS-1002", "host": ["{{baseUrl}}"], "path": ["api", "employees", "HRMS-1002"] }
+          }
+        },
+        {
+          "name": "Onboard New Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"vikram.sharma@hrms.com\",\n  \"password\": \"Welcome@123\",\n  \"role\": \"EMPLOYEE\",\n  \"firstName\": \"Vikram\",\n  \"lastName\": \"Sharma\",\n  \"phone\": \"+1 555-0199\",\n  \"department\": \"Engineering\",\n  \"designation\": \"DevOps Specialist\",\n  \"joiningDate\": \"2026-10-12\",\n  \"baseSalary\": 82000,\n  \"hra\": 24600,\n  \"allowances\": 7500,\n  \"pfDeduction\": 5904,\n  \"taxDeduction\": 5200,\n  \"bankName\": \"HDFC Bank\",\n  \"accountNumber\": \"998877665544\",\n  \"ifscCode\": \"HDFC0001928\",\n  \"emergencyContact\": \"+1 555-0988\",\n  \"address\": \"400 Tech Hub Way, San Francisco, CA\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/employees", "host": ["{{baseUrl}}"], "path": ["api", "employees"] }
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designation\": \"Lead Platform Engineer\",\n  \"baseSalary\": 88000,\n  \"phone\": \"+1 555-0200\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/employees/EMPLOYEE_ID", "host": ["{{baseUrl}}"], "path": ["api", "employees", "EMPLOYEE_ID"] }
+          }
+        },
+        {
+          "name": "Toggle Employee Status (Active / Inactive)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/employees/EMPLOYEE_ID/status", "host": ["{{baseUrl}}"], "path": ["api", "employees", "EMPLOYEE_ID", "status"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Attendance Management",
+      "item": [
+        {
+          "name": "Check-In (Punch In)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/attendance/check-in", "host": ["{{baseUrl}}"], "path": ["api", "attendance", "check-in"] }
+          }
+        },
+        {
+          "name": "Check-Out (Punch Out)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/attendance/check-out", "host": ["{{baseUrl}}"], "path": ["api", "attendance", "check-out"] }
+          }
+        },
+        {
+          "name": "Get Today Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/attendance/today", "host": ["{{baseUrl}}"], "path": ["api", "attendance", "today"] }
+          }
+        },
+        {
+          "name": "Get My Attendance History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/attendance/my?month=10&year=2026", "host": ["{{baseUrl}}"], "path": ["api", "attendance", "my"] }
+          }
+        },
+        {
+          "name": "Admin View All Attendance",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/attendance?month=10&year=2026", "host": ["{{baseUrl}}"], "path": ["api", "attendance"] }
+          }
+        },
+        {
+          "name": "Admin Attendance Override",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": \"EMPLOYEE_ID\",\n  \"date\": \"2026-10-12\",\n  \"workingHours\": 8.5,\n  \"status\": \"PRESENT\",\n  \"overrideReason\": \"Corrected missed biometric scan on client visit\",\n  \"notes\": \"Approved by HR Operations\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/attendance/override", "host": ["{{baseUrl}}"], "path": ["api", "attendance", "override"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Leave Management",
+      "item": [
+        {
+          "name": "Get Leave Balances",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/leaves/balances", "host": ["{{baseUrl}}"], "path": ["api", "leaves", "balances"] }
+          }
+        },
+        {
+          "name": "Apply for Leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leaveType\": \"CL\",\n  \"startDate\": \"2026-10-25\",\n  \"endDate\": \"2026-10-26\",\n  \"reason\": \"Family celebration and personal commitment\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/leaves/apply", "host": ["{{baseUrl}}"], "path": ["api", "leaves", "apply"] }
+          }
+        },
+        {
+          "name": "Get My Leave Applications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/leaves/my", "host": ["{{baseUrl}}"], "path": ["api", "leaves", "my"] }
+          }
+        },
+        {
+          "name": "Admin View All Leave Requests",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/leaves?status=ALL", "host": ["{{baseUrl}}"], "path": ["api", "leaves"] }
+          }
+        },
+        {
+          "name": "Admin Approve or Reject Leave",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"rejectionReason\": \"\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/leaves/LEAVE_ID/review", "host": ["{{baseUrl}}"], "path": ["api", "leaves", "LEAVE_ID", "review"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Payroll & Salary Slips",
+      "item": [
+        {
+          "name": "Generate Monthly Payroll",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"month\": 10,\n  \"year\": 2026\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/payroll/generate", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "generate"] }
+          }
+        },
+        {
+          "name": "Get All Payroll Records",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/payroll?month=10&year=2026", "host": ["{{baseUrl}}"], "path": ["api", "payroll"] }
+          }
+        },
+        {
+          "name": "Get My Payroll History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/payroll/my", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "my"] }
+          }
+        },
+        {
+          "name": "Lock Payroll Record",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/payroll/PAYROLL_ID/lock", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "PAYROLL_ID", "lock"] }
+          }
+        },
+        {
+          "name": "Simulate Salary Credit (Disbursement)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/payroll/PAYROLL_ID/disburse", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "PAYROLL_ID", "disburse"] }
+          }
+        },
+        {
+          "name": "Download Salary Slip PDF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/payroll/PAYROLL_ID/payslip", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "PAYROLL_ID", "payslip"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Reports & Analytics",
+      "item": [
+        {
+          "name": "Dashboard Statistics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/stats", "host": ["{{baseUrl}}"], "path": ["api", "reports", "stats"] }
+          }
+        },
+        {
+          "name": "Attendance Analytics Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/attendance", "host": ["{{baseUrl}}"], "path": ["api", "reports", "attendance"] }
+          }
+        },
+        {
+          "name": "Leave Analytics Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/leave", "host": ["{{baseUrl}}"], "path": ["api", "reports", "leave"] }
+          }
+        },
+        {
+          "name": "Payroll Summary Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/payroll?month=9&year=2026", "host": ["{{baseUrl}}"], "path": ["api", "reports", "payroll"] }
+          }
+        },
+        {
+          "name": "Export Report to CSV",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/export/csv?type=payroll", "host": ["{{baseUrl}}"], "path": ["api", "reports", "export", "csv"] }
+          }
+        },
+        {
+          "name": "Export Report to PDF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/export/pdf?type=payroll", "host": ["{{baseUrl}}"], "path": ["api", "reports", "export", "pdf"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Audit Logs & System Notifications",
+      "item": [
+        {
+          "name": "Get Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/audit", "host": ["{{baseUrl}}"], "path": ["api", "audit"] }
+          }
+        },
+        {
+          "name": "Get Email Delivery Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/audit/emails", "host": ["{{baseUrl}}"], "path": ["api", "audit", "emails"] }
+          }
+        },
+        {
+          "name": "Get My In-App Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications/my", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "my"] }
+          }
+        },
+        {
+          "name": "Mark All Notifications Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications/read-all", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "read-all"] }
+          }
+        }
+      ]
+    }
+  ]
+}

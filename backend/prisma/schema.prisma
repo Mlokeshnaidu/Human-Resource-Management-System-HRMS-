@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./hrms.db"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  role          String         @default("EMPLOYEE") // "ADMIN", "HR", "EMPLOYEE"
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  employee      Employee?
+  notifications Notification[]
+}
+
+model Employee {
+  id                 String         @id @default(uuid())
+  employeeCode       String         @unique // e.g. HRMS-1001
+  userId             String         @unique
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName          String
+  lastName           String
+  phone              String?
+  department         String         // Engineering, HR, Sales, Finance, Operations, Marketing
+  designation        String         // e.g. Senior Software Engineer
+  joiningDate        DateTime
+  status             String         @default("ACTIVE") // ACTIVE, INACTIVE, ON_LEAVE
+  
+  // Salary Structure
+  baseSalary         Float          @default(50000)
+  hra                Float          @default(15000)
+  allowances         Float          @default(5000)
+  pfDeduction        Float          @default(3600)
+  taxDeduction       Float          @default(2500)
+  
+  // Bank & Emergency Details
+  bankName           String?
+  accountNumber      String?
+  ifscCode           String?
+  emergencyContact   String?
+  address            String?
+  
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  documents          Document[]
+  attendance         Attendance[]
+  leaveRequests      LeaveRequest[]
+  leaveBalances      LeaveBalance[]
+  payrolls           Payroll[]
+}
+
+model Document {
+  id           String    @id @default(uuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  documentType String    // ID_PROOF, RESUME, OFFER_LETTER, CERTIFICATE, OTHER
+  fileName     String
+  originalName String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  uploadedAt   DateTime  @default(now())
+}
+
+model Attendance {
+  id             String    @id @default(uuid())
+  employeeId     String
+  employee       Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date           String    // YYYY-MM-DD
+  checkIn        DateTime?
+  checkOut       DateTime?
+  workingHours   Float     @default(0)
+  status         String    @default("PRESENT") // PRESENT, HALF_DAY, ABSENT, ON_LEAVE
+  isOverride     Boolean   @default(false)
+  overrideReason String?
+  overriddenBy   String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([employeeId, date])
+}
+
+model LeaveBalance {
+  id            String   @id @default(uuid())
+  employeeId    String
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  year          Int
+  leaveType     String   // CL, SL, PL
+  totalDays     Float
+  usedDays      Float    @default(0)
+  remainingDays Float
+  updatedAt     DateTime @updatedAt
+
+  @@unique([employeeId, year, leaveType])
+}
+
+model LeaveRequest {
+  id              String    @id @default(uuid())
+  employeeId      String
+  employee        Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType       String    // CL, SL, PL, LOP
+  startDate       String    // YYYY-MM-DD
+  endDate         String    // YYYY-MM-DD
+  totalDays       Float
+  reason          String
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  isLossOfPay     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Payroll {
+  id                   String    @id @default(uuid())
+  employeeId           String
+  employee             Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  month                Int       // 1 - 12
+  year                 Int       // e.g. 2026
+  totalWorkingDays     Int       @default(30)
+  presentDays          Float     @default(30)
+  paidLeaveDays        Float     @default(0)
+  lopDays              Float     @default(0)
+
+  // Earnings
+  baseSalary           Float
+  hra                  Float
+  allowances           Float
+  bonus                Float     @default(0)
+  grossSalary          Float
+
+  // Deductions
+  pf                   Float
+  tax                  Float
+  lopDeduction         Float     @default(0)
+  otherDeductions      Float     @default(0)
+  totalDeductions      Float
+
+  // Net
+  netSalary            Float
+
+  // Status & Lock
+  status               String    @default("DRAFT") // DRAFT, PROCESSED, PAID
+  isLocked             Boolean   @default(false)
+  lockedAt             DateTime?
+  paymentDate          DateTime?
+  paymentMethod        String?   @default("BANK_TRANSFER")
+  transactionReference String?
+  remarks              String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@unique([employeeId, month, year])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   // ONBOARDING, LEAVE, PAYROLL, ATTENDANCE, SYSTEM
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  userEmail    String?
+  userRole     String?
+  action       String   // USER_LOGIN, EMPLOYEE_CREATED, LEAVE_APPROVED, etc.
+  targetEntity String   // Employee, Attendance, LeaveRequest, Payroll, User
+  targetId     String?
+  details      String?  // JSON string or summary
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+}
+
+model EmailLog {
+  id        String   @id @default(uuid())
+  to        String
+  subject   String
+  template  String
+  payload   String?
+  status    String   @default("SENT")
+  sentAt    DateTime @default(now())
+}
