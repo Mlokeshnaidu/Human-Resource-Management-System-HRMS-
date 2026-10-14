@@ -10,6 +10,8 @@ import {
   Users,
   CreditCard,
   PieChart,
+  DollarSign,
+  TrendingUp
 } from 'lucide-react';
 
 export default function Reports() {
@@ -31,7 +33,7 @@ export default function Reports() {
       let endpoint = `/reports/${activeReport}?month=${month}&year=${year}`;
       if (department !== 'ALL') endpoint += `&department=${department}`;
       const res = await api.get(endpoint);
-      if (res.success) {
+      if (res && res.success) {
         setReportData(res);
       }
     } catch (err) {
@@ -70,6 +72,14 @@ export default function Reports() {
       alert(`PDF export failed: ${err.message}`);
     }
   };
+
+  const payrollList = reportData ? (reportData.payrolls || reportData.data || []) : [];
+  const attendanceList = reportData ? (reportData.records || reportData.data || []) : [];
+  const leaveList = reportData ? (reportData.leaves || reportData.data || []) : [];
+
+  const netTotal = reportData?.totals?.net ?? reportData?.summary?.totalNet ?? 0;
+  const grossTotal = reportData?.totals?.gross ?? reportData?.summary?.totalGross ?? 0;
+  const lopTotal = reportData?.totals?.lop ?? 0;
 
   return (
     <div>
@@ -125,7 +135,7 @@ export default function Reports() {
             <option value="Engineering">Engineering</option>
             <option value="Human Resources">Human Resources</option>
             <option value="Product & Design">Product & Design</option>
-            <option value="Finance">Finance</option>
+            <option value="Finance & Accounting">Finance & Accounting</option>
             <option value="Sales & Marketing">Sales & Marketing</option>
           </select>
 
@@ -165,13 +175,13 @@ export default function Reports() {
       ) : (
         <>
           {/* ================= PAYROLL REPORT VIEW ================= */}
-          {activeReport === 'payroll' && reportData && (
+          {activeReport === 'payroll' && (
             <div>
               <div className="grid-metrics">
                 <div className="metric-card" style={{ '--metric-accent': '#10b981', '--metric-bg': '#ecfdf5', '--metric-color': '#10b981' }}>
                   <div className="metric-info">
                     <h3>Total Net Payout</h3>
-                    <div className="metric-value">₹{Number(reportData.totals?.net || 0).toLocaleString('en-IN')}</div>
+                    <div className="metric-value">₹{Number(netTotal).toLocaleString('en-IN')}</div>
                     <div className="metric-sub">Disbursed salary expense</div>
                   </div>
                   <div className="metric-icon-box"><CreditCard size={24} /></div>
@@ -180,16 +190,16 @@ export default function Reports() {
                 <div className="metric-card" style={{ '--metric-accent': '#4f46e5', '--metric-bg': '#eef2ff', '--metric-color': '#4f46e5' }}>
                   <div className="metric-info">
                     <h3>Gross Earnings</h3>
-                    <div className="metric-value">₹{Number(reportData.totals?.gross || 0).toLocaleString('en-IN')}</div>
+                    <div className="metric-value">₹{Number(grossTotal).toLocaleString('en-IN')}</div>
                     <div className="metric-sub">Base, HRA & allowances</div>
                   </div>
-                  <div className="metric-icon-box"><DollarSign size={24} /></div>
+                  <div className="metric-icon-box"><TrendingUp size={24} /></div>
                 </div>
 
                 <div className="metric-card" style={{ '--metric-accent': '#dc2626', '--metric-bg': '#fef2f2', '--metric-color': '#dc2626' }}>
                   <div className="metric-info">
                     <h3>LOP Deductions</h3>
-                    <div className="metric-value">₹{Number(reportData.totals?.lop || 0).toLocaleString('en-IN')}</div>
+                    <div className="metric-value">₹{Number(lopTotal).toLocaleString('en-IN')}</div>
                     <div className="metric-sub">Loss of pay penalty savings</div>
                   </div>
                   <div className="metric-icon-box"><BarChart3 size={24} /></div>
@@ -198,7 +208,7 @@ export default function Reports() {
 
               <div className="card">
                 <div className="card-header">
-                  <h2 className="card-title">Payroll Expenditure Details</h2>
+                  <h2 className="card-title">Payroll Expenditure Details ({payrollList.length} staff)</h2>
                 </div>
                 <div className="table-responsive">
                   <table className="custom-table">
@@ -215,24 +225,37 @@ export default function Reports() {
                       </tr>
                     </thead>
                     <tbody>
-                      {reportData.payrolls?.map((p) => (
-                        <tr key={p.id}>
-                          <td style={{ fontWeight: '600' }}>
-                            {p.employee?.firstName} {p.employee?.lastName} ({p.employee?.employeeCode})
+                      {payrollList.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                            No payroll records found for this period.
                           </td>
-                          <td>{p.employee?.department}</td>
-                          <td>₹{Number(p.grossSalary).toLocaleString('en-IN')}</td>
-                          <td>₹{Number(p.pf).toLocaleString('en-IN')}</td>
-                          <td>₹{Number(p.tax).toLocaleString('en-IN')}</td>
-                          <td style={{ color: p.lopDeduction > 0 ? '#dc2626' : 'inherit' }}>
-                            ₹{Number(p.lopDeduction).toLocaleString('en-IN')}
-                          </td>
-                          <td style={{ fontWeight: '700', color: '#059669' }}>
-                            ₹{Number(p.netSalary).toLocaleString('en-IN')}
-                          </td>
-                          <td><span className={`badge badge-${p.status.toLowerCase()}`}>{p.status}</span></td>
                         </tr>
-                      ))}
+                      ) : (
+                        payrollList.map((p) => {
+                          const empName = p.employee?.firstName ? `${p.employee.firstName} ${p.employee.lastName}` : (p.employeeName || 'Staff Member');
+                          const empCode = p.employee?.employeeCode || p.employeeCode || '';
+                          const empDept = p.employee?.department || p.department || 'General';
+                          return (
+                            <tr key={p.id}>
+                              <td style={{ fontWeight: '600' }}>
+                                {empName} {empCode ? `(${empCode})` : ''}
+                              </td>
+                              <td>{empDept}</td>
+                              <td>₹{Number(p.grossSalary || 0).toLocaleString('en-IN')}</td>
+                              <td>₹{Number(p.pf || 0).toLocaleString('en-IN')}</td>
+                              <td>₹{Number(p.tax || 0).toLocaleString('en-IN')}</td>
+                              <td style={{ color: Number(p.lopDeduction) > 0 ? '#dc2626' : 'inherit' }}>
+                                ₹{Number(p.lopDeduction || 0).toLocaleString('en-IN')}
+                              </td>
+                              <td style={{ fontWeight: '700', color: '#059669' }}>
+                                ₹{Number(p.netSalary || 0).toLocaleString('en-IN')}
+                              </td>
+                              <td><span className={`badge badge-${(p.status || 'processed').toLowerCase()}`}>{p.status}</span></td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -241,13 +264,13 @@ export default function Reports() {
           )}
 
           {/* ================= ATTENDANCE REPORT VIEW ================= */}
-          {activeReport === 'attendance' && reportData && (
+          {activeReport === 'attendance' && (
             <div>
               <div className="grid-metrics">
                 <div className="metric-card" style={{ '--metric-accent': '#10b981', '--metric-bg': '#ecfdf5', '--metric-color': '#10b981' }}>
                   <div className="metric-info">
                     <h3>Present Punches</h3>
-                    <div className="metric-value">{reportData.summary?.present || 0}</div>
+                    <div className="metric-value">{reportData?.summary?.present || 0}</div>
                     <div className="metric-sub">Full working shifts</div>
                   </div>
                   <div className="metric-icon-box"><Calendar size={24} /></div>
@@ -256,7 +279,7 @@ export default function Reports() {
                 <div className="metric-card" style={{ '--metric-accent': '#f59e0b', '--metric-bg': '#fffbeb', '--metric-color': '#f59e0b' }}>
                   <div className="metric-info">
                     <h3>Half Days</h3>
-                    <div className="metric-value">{reportData.summary?.halfDay || 0}</div>
+                    <div className="metric-value">{reportData?.summary?.halfDay || 0}</div>
                     <div className="metric-sub">&lt; 4 hours logged</div>
                   </div>
                   <div className="metric-icon-box"><Calendar size={24} /></div>
@@ -264,9 +287,9 @@ export default function Reports() {
 
                 <div className="metric-card" style={{ '--metric-accent': '#3b82f6', '--metric-bg': '#eff6ff', '--metric-color': '#3b82f6' }}>
                   <div className="metric-info">
-                    <h3>On Leave</h3>
-                    <div className="metric-value">{reportData.summary?.onLeave || 0}</div>
-                    <div className="metric-sub">Approved leave entries</div>
+                    <h3>Total Logged</h3>
+                    <div className="metric-value">{attendanceList.length}</div>
+                    <div className="metric-sub">Attendance entries</div>
                   </div>
                   <div className="metric-icon-box"><Calendar size={24} /></div>
                 </div>
@@ -274,7 +297,7 @@ export default function Reports() {
 
               <div className="card">
                 <div className="card-header">
-                  <h2 className="card-title">Attendance Tracking Logs</h2>
+                  <h2 className="card-title">Attendance Tracking Logs ({attendanceList.length} entries)</h2>
                 </div>
                 <div className="table-responsive">
                   <table className="custom-table">
@@ -290,17 +313,30 @@ export default function Reports() {
                       </tr>
                     </thead>
                     <tbody>
-                      {reportData.records?.map((r) => (
-                        <tr key={r.id}>
-                          <td style={{ fontWeight: '600' }}>{r.date}</td>
-                          <td>{r.employee?.firstName} {r.employee?.lastName} ({r.employee?.employeeCode})</td>
-                          <td>{r.employee?.department}</td>
-                          <td>{r.checkIn ? new Date(r.checkIn).toLocaleTimeString() : '-'}</td>
-                          <td>{r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : '-'}</td>
-                          <td>{r.workingHours} hrs</td>
-                          <td><span className={`badge badge-${r.status.toLowerCase()}`}>{r.status}</span></td>
+                      {attendanceList.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                            No attendance logs found for this period.
+                          </td>
                         </tr>
-                      ))}
+                      ) : (
+                        attendanceList.map((r) => {
+                          const empName = r.employee?.firstName ? `${r.employee.firstName} ${r.employee.lastName}` : (r.employeeName || 'Staff Member');
+                          const empCode = r.employee?.employeeCode || r.employeeCode || '';
+                          const empDept = r.employee?.department || r.department || 'General';
+                          return (
+                            <tr key={r.id}>
+                              <td style={{ fontWeight: '600' }}>{r.date}</td>
+                              <td>{empName} {empCode ? `(${empCode})` : ''}</td>
+                              <td>{empDept}</td>
+                              <td>{r.checkIn ? new Date(r.checkIn).toLocaleTimeString() : '-'}</td>
+                              <td>{r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : '-'}</td>
+                              <td>{r.workingHours} hrs</td>
+                              <td><span className={`badge badge-${(r.status || 'present').toLowerCase()}`}>{r.status}</span></td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -309,13 +345,13 @@ export default function Reports() {
           )}
 
           {/* ================= LEAVE REPORT VIEW ================= */}
-          {activeReport === 'leave' && reportData && (
+          {activeReport === 'leave' && (
             <div>
               <div className="grid-metrics">
                 <div className="metric-card" style={{ '--metric-accent': '#4f46e5', '--metric-bg': '#eef2ff', '--metric-color': '#4f46e5' }}>
                   <div className="metric-info">
                     <h3>Casual Leaves (CL)</h3>
-                    <div className="metric-value">{reportData.summary?.CL || 0}</div>
+                    <div className="metric-value">{reportData?.summary?.CL || 0}</div>
                     <div className="metric-sub">Total requests submitted</div>
                   </div>
                   <div className="metric-icon-box"><Users size={24} /></div>
@@ -324,7 +360,7 @@ export default function Reports() {
                 <div className="metric-card" style={{ '--metric-accent': '#f59e0b', '--metric-bg': '#fffbeb', '--metric-color': '#f59e0b' }}>
                   <div className="metric-info">
                     <h3>Sick Leaves (SL)</h3>
-                    <div className="metric-value">{reportData.summary?.SL || 0}</div>
+                    <div className="metric-value">{reportData?.summary?.SL || 0}</div>
                     <div className="metric-sub">Medical absence claims</div>
                   </div>
                   <div className="metric-icon-box"><Users size={24} /></div>
@@ -333,7 +369,7 @@ export default function Reports() {
                 <div className="metric-card" style={{ '--metric-accent': '#dc2626', '--metric-bg': '#fef2f2', '--metric-color': '#dc2626' }}>
                   <div className="metric-info">
                     <h3>Loss of Pay (LOP)</h3>
-                    <div className="metric-value">{reportData.summary?.LOP || 0}</div>
+                    <div className="metric-value">{reportData?.summary?.LOP || 0}</div>
                     <div className="metric-sub">Unpaid leave applications</div>
                   </div>
                   <div className="metric-icon-box"><Users size={24} /></div>
@@ -342,7 +378,7 @@ export default function Reports() {
 
               <div className="card">
                 <div className="card-header">
-                  <h2 className="card-title">Leave Applications Register</h2>
+                  <h2 className="card-title">Leave Applications Register ({leaveList.length} applications)</h2>
                 </div>
                 <div className="table-responsive">
                   <table className="custom-table">
@@ -357,18 +393,30 @@ export default function Reports() {
                       </tr>
                     </thead>
                     <tbody>
-                      {reportData.leaves?.map((l) => (
-                        <tr key={l.id}>
-                          <td style={{ fontWeight: '600' }}>
-                            {l.employee?.firstName} {l.employee?.lastName} ({l.employee?.employeeCode})
+                      {leaveList.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                            No leave applications found for this year.
                           </td>
-                          <td style={{ fontWeight: '700' }}>{l.leaveType}</td>
-                          <td>{l.startDate} to {l.endDate}</td>
-                          <td>{l.totalDays}d</td>
-                          <td style={{ maxWidth: '250px', fontSize: '12.5px' }}>{l.reason}</td>
-                          <td><span className={`badge badge-${l.status.toLowerCase()}`}>{l.status}</span></td>
                         </tr>
-                      ))}
+                      ) : (
+                        leaveList.map((l) => {
+                          const empName = l.employee?.firstName ? `${l.employee.firstName} ${l.employee.lastName}` : (l.employeeName || 'Staff Member');
+                          const empCode = l.employee?.employeeCode || l.employeeCode || '';
+                          return (
+                            <tr key={l.id}>
+                              <td style={{ fontWeight: '600' }}>
+                                {empName} {empCode ? `(${empCode})` : ''}
+                              </td>
+                              <td style={{ fontWeight: '700' }}>{l.leaveType}</td>
+                              <td>{l.startDate} to {l.endDate}</td>
+                              <td>{l.totalDays}d</td>
+                              <td style={{ maxWidth: '250px', fontSize: '12.5px' }}>{l.reason}</td>
+                              <td><span className={`badge badge-${(l.status || 'pending').toLowerCase()}`}>{l.status}</span></td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>

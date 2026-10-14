@@ -1,6 +1,6 @@
 import io
 import csv
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
@@ -23,7 +23,7 @@ def get_dashboard_stats(
     total_employees = db.query(Employee).count()
     active_employees = db.query(Employee).filter(Employee.status == "ACTIVE").count()
 
-    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     today_records = db.query(Attendance).filter(Attendance.date == today_str).all()
     present_today = len([a for a in today_records if a.status == "PRESENT"])
     half_day_today = len([a for a in today_records if a.status == "HALF_DAY"])
@@ -31,7 +31,7 @@ def get_dashboard_stats(
 
     pending_leaves = db.query(LeaveRequest).filter(LeaveRequest.status == "PENDING").count()
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     curr_payrolls = db.query(Payroll).filter(
         Payroll.month == now.month,
         Payroll.year == now.year
@@ -80,6 +80,8 @@ def get_dashboard_stats(
 def get_attendance_report(
     startDate: Optional[str] = None,
     endDate: Optional[str] = None,
+    month: Optional[int] = None,
+    year: Optional[int] = None,
     department: Optional[str] = None,
     current_user: User = Depends(require_roles("ADMIN", "HR")),
     db: Session = Depends(get_db)
@@ -87,6 +89,10 @@ def get_attendance_report(
     query = db.query(Attendance)
     if startDate and endDate:
         query = query.filter(Attendance.date >= startDate, Attendance.date <= endDate)
+    elif month and year:
+        prefix = f"{year}-{str(month).zfill(2)}"
+        query = query.filter(Attendance.date.startswith(prefix))
+
     if department and department != "ALL":
         query = query.join(Employee).filter(Employee.department == department)
 
@@ -97,40 +103,54 @@ def get_attendance_report(
     absent = len([r for r in records if r.status == "ABSENT"])
     total_hours = sum(r.workingHours for r in records)
 
+    formatted_records = [
+        {
+            "id": r.id,
+            "employeeCode": r.employee.employeeCode if r.employee else "",
+            "employeeName": f"{r.employee.firstName} {r.employee.lastName}" if r.employee else "",
+            "employee": {
+                "firstName": r.employee.firstName if r.employee else "",
+                "lastName": r.employee.lastName if r.employee else "",
+                "employeeCode": r.employee.employeeCode if r.employee else "",
+                "department": r.employee.department if r.employee else ""
+            },
+            "department": r.employee.department if r.employee else "",
+            "date": r.date,
+            "checkIn": r.checkIn.isoformat() if r.checkIn else None,
+            "checkOut": r.checkOut.isoformat() if r.checkOut else None,
+            "workingHours": r.workingHours,
+            "status": r.status,
+            "isOverride": r.isOverride
+        } for r in records
+    ]
+
+    summary = {
+        "totalRecords": len(records),
+        "present": present,
+        "halfDay": half_day,
+        "absent": absent,
+        "onLeave": 0,
+        "totalHours": round(total_hours, 2),
+        "averageHours": round(total_hours / len(records), 2) if records else 0
+    }
+
     return {
         "success": True,
-        "summary": {
-            "totalRecords": len(records),
-            "present": present,
-            "halfDay": half_day,
-            "absent": absent,
-            "totalHours": round(total_hours, 2),
-            "averageHours": round(total_hours / len(records), 2) if records else 0
-        },
-        "data": [
-            {
-                "id": r.id,
-                "employeeCode": r.employee.employeeCode if r.employee else "",
-                "employeeName": f"{r.employee.firstName} {r.employee.lastName}" if r.employee else "",
-                "department": r.employee.department if r.employee else "",
-                "date": r.date,
-                "checkIn": r.checkIn.isoformat() if r.checkIn else None,
-                "checkOut": r.checkOut.isoformat() if r.checkOut else None,
-                "workingHours": r.workingHours,
-                "status": r.status,
-                "isOverride": r.isOverride
-            } for r in records
-        ]
+        "summary": summary,
+        "records": formatted_records,
+        "data": formatted_records
     }
 
 @router.get("/leaves")
+@router.get("/leave")
 def get_leave_report(
     year: Optional[int] = None,
+    month: Optional[int] = None,
     department: Optional[str] = None,
     current_user: User = Depends(require_roles("ADMIN", "HR")),
     db: Session = Depends(get_db)
 ):
-    target_year = year or datetime.utcnow().year
+    target_year = year or datetime.now(timezone.utc).year
     prefix = f"{target_year}-"
 
     query = db.query(LeaveRequest).filter(LeaveRequest.startDate.startswith(prefix))
@@ -142,31 +162,50 @@ def get_leave_report(
     approved = len([l for l in leaves if l.status == "APPROVED"])
     pending = len([l for l in leaves if l.status == "PENDING"])
     rejected = len([l for l in leaves if l.status == "REJECTED"])
+    cl_count = len([l for l in leaves if l.leaveType == "CL"])
+    sl_count = len([l for l in leaves if l.leaveType == "SL"])
+    pl_count = len([l for l in leaves if l.leaveType == "PL"])
     lop = len([l for l in leaves if l.isLossOfPay or l.leaveType == "LOP"])
+
+    formatted_leaves = [
+        {
+            "id": l.id,
+            "employeeCode": l.employee.employeeCode if l.employee else "",
+            "employeeName": f"{l.employee.firstName} {l.employee.lastName}" if l.employee else "",
+            "employee": {
+                "firstName": l.employee.firstName if l.employee else "",
+                "lastName": l.employee.lastName if l.employee else "",
+                "employeeCode": l.employee.employeeCode if l.employee else "",
+                "department": l.employee.department if l.employee else ""
+            },
+            "department": l.employee.department if l.employee else "",
+            "leaveType": l.leaveType,
+            "startDate": l.startDate,
+            "endDate": l.endDate,
+            "totalDays": l.totalDays,
+            "reason": l.reason,
+            "status": l.status,
+            "isLossOfPay": l.isLossOfPay
+        } for l in leaves
+    ]
+
+    summary = {
+        "totalRequests": len(leaves),
+        "approved": approved,
+        "pending": pending,
+        "rejected": rejected,
+        "CL": cl_count,
+        "SL": sl_count,
+        "PL": pl_count,
+        "LOP": lop,
+        "lossOfPayCount": lop
+    }
 
     return {
         "success": True,
-        "summary": {
-            "totalRequests": len(leaves),
-            "approved": approved,
-            "pending": pending,
-            "rejected": rejected,
-            "lossOfPayCount": lop
-        },
-        "data": [
-            {
-                "id": l.id,
-                "employeeCode": l.employee.employeeCode if l.employee else "",
-                "employeeName": f"{l.employee.firstName} {l.employee.lastName}" if l.employee else "",
-                "department": l.employee.department if l.employee else "",
-                "leaveType": l.leaveType,
-                "startDate": l.startDate,
-                "endDate": l.endDate,
-                "totalDays": l.totalDays,
-                "status": l.status,
-                "isLossOfPay": l.isLossOfPay
-            } for l in leaves
-        ]
+        "summary": summary,
+        "leaves": formatted_leaves,
+        "data": formatted_leaves
     }
 
 @router.get("/payroll")
@@ -177,7 +216,7 @@ def get_payroll_report(
     current_user: User = Depends(require_roles("ADMIN", "HR")),
     db: Session = Depends(get_db)
 ):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     m = month or now.month
     y = year or now.year
 
@@ -190,30 +229,53 @@ def get_payroll_report(
     gross_total = sum(p.grossSalary for p in payrolls)
     net_total = sum(p.netSalary for p in payrolls)
     deductions_total = sum(p.totalDeductions for p in payrolls)
+    lop_total = sum(p.lopDeduction for p in payrolls)
+
+    formatted_payrolls = [
+        {
+            "id": p.id,
+            "employeeCode": p.employee.employeeCode if p.employee else "",
+            "employeeName": f"{p.employee.firstName} {p.employee.lastName}" if p.employee else "",
+            "employee": {
+                "firstName": p.employee.firstName if p.employee else "",
+                "lastName": p.employee.lastName if p.employee else "",
+                "employeeCode": p.employee.employeeCode if p.employee else "",
+                "department": p.employee.department if p.employee else ""
+            },
+            "department": p.employee.department if p.employee else "",
+            "baseSalary": p.baseSalary,
+            "grossSalary": p.grossSalary,
+            "pf": p.pf,
+            "tax": p.tax,
+            "lopDeduction": p.lopDeduction,
+            "totalDeductions": p.totalDeductions,
+            "netSalary": p.netSalary,
+            "status": p.status
+        } for p in payrolls
+    ]
+
+    totals = {
+        "gross": round(gross_total, 2),
+        "net": round(net_total, 2),
+        "deductions": round(deductions_total, 2),
+        "lop": round(lop_total, 2)
+    }
+
+    summary = {
+        "month": m,
+        "year": y,
+        "staffCount": len(payrolls),
+        "totalGross": round(gross_total, 2),
+        "totalNet": round(net_total, 2),
+        "totalDeductions": round(deductions_total, 2)
+    }
 
     return {
         "success": True,
-        "summary": {
-            "month": m,
-            "year": y,
-            "staffCount": len(payrolls),
-            "totalGross": round(gross_total, 2),
-            "totalNet": round(net_total, 2),
-            "totalDeductions": round(deductions_total, 2)
-        },
-        "data": [
-            {
-                "id": p.id,
-                "employeeCode": p.employee.employeeCode if p.employee else "",
-                "employeeName": f"{p.employee.firstName} {p.employee.lastName}" if p.employee else "",
-                "department": p.employee.department if p.employee else "",
-                "baseSalary": p.baseSalary,
-                "grossSalary": p.grossSalary,
-                "totalDeductions": p.totalDeductions,
-                "netSalary": p.netSalary,
-                "status": p.status
-            } for p in payrolls
-        ]
+        "summary": summary,
+        "totals": totals,
+        "payrolls": formatted_payrolls,
+        "data": formatted_payrolls
     }
 
 @router.get("/export/csv")
@@ -228,8 +290,8 @@ def export_csv(
     writer = csv.writer(output)
 
     if type == "payroll":
-        m = month or datetime.utcnow().month
-        y = year or datetime.utcnow().year
+        m = month or datetime.now(timezone.utc).month
+        y = year or datetime.now(timezone.utc).year
         payrolls = db.query(Payroll).filter(Payroll.month == m, Payroll.year == y).all()
 
         writer.writerow(["Employee Code", "Name", "Department", "Base Salary", "Gross Salary", "Total Deductions", "Net Salary", "Status"])
@@ -279,12 +341,12 @@ def export_pdf(
     elements = [
         Paragraph("<font size=16 color='#1e3a8a'><b>TECHFLOW ENTERPRISE HRMS</b></font>", normal),
         Paragraph(f"<font size=11 color='#475569'><b>Executive Analytics Report: {type.upper()}</b></font>", normal),
-        Paragraph(f"<font size=8 color='#94a3b8'>Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</font>", normal),
+        Paragraph(f"<font size=8 color='#94a3b8'>Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}</font>", normal),
         Spacer(1, 15)
     ]
 
     if type == "payroll":
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         payrolls = db.query(Payroll).filter(Payroll.month == now.month, Payroll.year == now.year).all()
         table_data = [["Code", "Name", "Dept", "Gross (INR)", "Deductions (INR)", "Net Pay (INR)"]]
         for p in payrolls:
