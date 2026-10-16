@@ -14,11 +14,30 @@ class Notification(Base):
     userId = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     title = Column(String(255), nullable=False)
     message = Column(Text, nullable=False)
-    type = Column(String(50), nullable=False)  # ONBOARDING, LEAVE, PAYROLL, SYSTEM
+    type = Column(String(50), nullable=False)  # ONBOARDING, LEAVE, PAYROLL, ATTENDANCE, SHIFT, ANNOUNCEMENT, SYSTEM
     isRead = Column(Boolean, default=False, nullable=False)
+    targetRole = Column(String(50), default="ALL", nullable=True)
+    targetDepartment = Column(String(100), default="ALL", nullable=True)
+    isBroadcast = Column(Boolean, default=False, nullable=False)
+    actionUrl = Column(String(255), nullable=True)
     createdAt = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="notifications")
+
+
+class NotificationPreference(Base):
+    __tablename__ = "notification_preferences"
+
+    id = Column(String(36), primary_key=True, default=gen_uuid)
+    userId = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    emailEnabled = Column(Boolean, default=True, nullable=False)
+    leaveAlerts = Column(Boolean, default=True, nullable=False)
+    payrollAlerts = Column(Boolean, default=True, nullable=False)
+    attendanceAlerts = Column(Boolean, default=True, nullable=False)
+    announcements = Column(Boolean, default=True, nullable=False)
+    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="notification_preference")
 
 
 class AuditLog(Base):

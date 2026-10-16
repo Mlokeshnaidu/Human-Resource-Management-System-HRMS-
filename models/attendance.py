@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Float, Boolean, DateTime, Text, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from core.database import Base
 
@@ -18,6 +18,12 @@ class Attendance(Base):
     checkOut = Column(DateTime, nullable=True)
     workingHours = Column(Float, default=0.0, nullable=False)
     status = Column(String(50), default="PRESENT", nullable=False)  # PRESENT, HALF_DAY, ABSENT, ON_LEAVE
+    shiftId = Column(String(36), ForeignKey("shifts.id", ondelete="SET NULL"), nullable=True)
+    isLate = Column(Boolean, default=False, nullable=False)
+    lateMinutes = Column(Integer, default=0, nullable=False)
+    isEarlyExit = Column(Boolean, default=False, nullable=False)
+    earlyExitMinutes = Column(Integer, default=0, nullable=False)
+    overtimeHours = Column(Float, default=0.0, nullable=False)
     isOverride = Column(Boolean, default=False, nullable=False)
     overrideReason = Column(Text, nullable=True)
     overriddenBy = Column(String(255), nullable=True)
@@ -26,3 +32,4 @@ class Attendance(Base):
     updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     employee = relationship("Employee", back_populates="attendance")
+    shift = relationship("Shift", foreign_keys=[shiftId])

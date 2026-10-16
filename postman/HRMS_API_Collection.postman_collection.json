@@ -413,13 +413,114 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": { "raw": "{{baseUrl}}/api/audit/emails", "host": ["{{baseUrl}}"], "path": ["api", "audit", "emails"] }
           }
-        },
+        }
+      ]
+    },
+    {
+      "name": "8. Holiday & Calendar Management",
+      "item": [
         {
-          "name": "Get My In-App Notifications",
+          "name": "List All Holidays (Year/Month/Type Filter)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": { "raw": "{{baseUrl}}/api/notifications/my", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "my"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/holidays?year=2026&type=ALL",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "holidays"],
+              "query": [
+                { "key": "year", "value": "2026" },
+                { "key": "type", "value": "ALL" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Upcoming Holidays Feed",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/holidays/upcoming?limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "holidays", "upcoming"],
+              "query": [{ "key": "limit", "value": "5" }]
+            }
+          }
+        },
+        {
+          "name": "Get Calendar Workday Summary (Total, Weekends, Holidays, Working Days)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/holidays/calendar-summary?year=2026&month=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "holidays", "calendar-summary"],
+              "query": [
+                { "key": "year", "value": "2026" },
+                { "key": "month", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin Create Holiday",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"National Innovation Day\",\n  \"date\": \"2026-11-15\",\n  \"type\": \"REGIONAL\",\n  \"description\": \"Annual technology and innovation summit holiday\",\n  \"applicableRegion\": \"Karnataka\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/holidays", "host": ["{{baseUrl}}"], "path": ["api", "holidays"] }
+          }
+        },
+        {
+          "name": "Admin Update Holiday",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"National Innovation Day (Updated)\",\n  \"type\": \"COMPANY\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/holidays/{{holidayId}}", "host": ["{{baseUrl}}"], "path": ["api", "holidays", "{{holidayId}}"] }
+          }
+        },
+        {
+          "name": "Admin Delete Holiday",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/holidays/{{holidayId}}", "host": ["{{baseUrl}}"], "path": ["api", "holidays", "{{holidayId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. In-App Notification Center & Broadcasts",
+      "item": [
+        {
+          "name": "Get User Notifications Feed",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications", "host": ["{{baseUrl}}"], "path": ["api", "notifications"] }
+          }
+        },
+        {
+          "name": "Mark Single Notification Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "{{notificationId}}", "read"] }
           }
         },
         {
@@ -428,6 +529,258 @@
             "method": "PATCH",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": { "raw": "{{baseUrl}}/api/notifications/read-all", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "read-all"] }
+          }
+        },
+        {
+          "name": "Get User Notification Preferences",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications/preferences", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "preferences"] }
+          }
+        },
+        {
+          "name": "Update Notification Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emailEnabled\": true,\n  \"leaveAlerts\": true,\n  \"payrollAlerts\": true,\n  \"attendanceAlerts\": true,\n  \"announcements\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/notifications/preferences", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "preferences"] }
+          }
+        },
+        {
+          "name": "Admin Broadcast Announcement (Dept / Organization)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Q4 All-Hands Townhall\",\n  \"message\": \"All employees are requested to join the strategic roadmap session on Friday at 4 PM IST.\",\n  \"targetType\": \"ORGANIZATION\",\n  \"category\": \"ANNOUNCEMENT\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/notifications/broadcast", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "broadcast"] }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications/{{notificationId}}", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "{{notificationId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Shift & Work Schedule Management",
+      "item": [
+        {
+          "name": "List All Work Shifts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/shifts", "host": ["{{baseUrl}}"], "path": ["api", "shifts"] }
+          }
+        },
+        {
+          "name": "Get Current User Assigned Shift",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/shifts/my", "host": ["{{baseUrl}}"], "path": ["api", "shifts", "my"] }
+          }
+        },
+        {
+          "name": "Create Shift Definition (Admin/HR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Afternoon Shift\",\n  \"code\": \"AFT\",\n  \"startTime\": \"14:00\",\n  \"endTime\": \"22:00\",\n  \"gracePeriodMinutes\": 15,\n  \"earlyExitThresholdMinutes\": 15,\n  \"fullDayHours\": 8.0,\n  \"halfDayHours\": 4.0,\n  \"description\": \"Afternoon product operations shift\",\n  \"isDefault\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/shifts", "host": ["{{baseUrl}}"], "path": ["api", "shifts"] }
+          }
+        },
+        {
+          "name": "Update Shift Definition",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gracePeriodMinutes\": 20,\n  \"description\": \"Updated grace threshold\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/shifts/{{shiftId}}", "host": ["{{baseUrl}}"], "path": ["api", "shifts", "{{shiftId}}"] }
+          }
+        },
+        {
+          "name": "Assign Shift to Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"startDate\": \"2026-11-01\",\n  \"notes\": \"Direct assignment by Project Manager\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/shifts/assign-employee", "host": ["{{baseUrl}}"], "path": ["api", "shifts", "assign-employee"] }
+          }
+        },
+        {
+          "name": "Assign Shift to Department",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department\": \"ENGINEERING\",\n  \"shiftId\": \"{{shiftId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/shifts/assign-department", "host": ["{{baseUrl}}"], "path": ["api", "shifts", "assign-department"] }
+          }
+        },
+        {
+          "name": "Get Employee Shift History Timeline",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/shifts/employee/{{employeeId}}/history", "host": ["{{baseUrl}}"], "path": ["api", "shifts", "employee", "{{employeeId}}", "history"] }
+          }
+        },
+        {
+          "name": "Get Shift Attendance Report (Shift Timings, Punctuality & Overtime)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/shifts/attendance-report?date=2026-10-15",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shifts", "attendance-report"],
+              "query": [{ "key": "date", "value": "2026-10-15" }]
+            }
+          }
+        },
+        {
+          "name": "Admin Shift Attendance Override",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendanceId\": \"{{attendanceId}}\",\n  \"isLate\": false,\n  \"lateMinutes\": 0,\n  \"overtimeHours\": 1.5,\n  \"overrideReason\": \"Late check-in waived due to urgent customer call escalation\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/shifts/attendance-override", "host": ["{{baseUrl}}"], "path": ["api", "shifts", "attendance-override"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Advanced Compensation & Salary Revisions",
+      "item": [
+        {
+          "name": "Get Employee Salary Structure",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/payroll/salary-structure/{{employeeId}}", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "salary-structure", "{{employeeId}}"] }
+          }
+        },
+        {
+          "name": "Configure Employee Salary Structure",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baseSalary\": 60000,\n  \"hra\": 24000,\n  \"conveyanceAllowance\": 3000,\n  \"medicalAllowance\": 2500,\n  \"specialAllowance\": 30500,\n  \"pfDeduction\": 7200,\n  \"taxDeduction\": 6500,\n  \"professionalTax\": 200,\n  \"overtimeHourlyRate\": 350,\n  \"effectiveDate\": \"2026-11-01\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/payroll/salary-structure/{{employeeId}}", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "salary-structure", "{{employeeId}}"] }
+          }
+        },
+        {
+          "name": "Submit Salary Revision Workflow",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"newBase\": 65000,\n  \"newHra\": 26000,\n  \"newConveyance\": 3000,\n  \"newMedical\": 2500,\n  \"newSpecial\": 30000,\n  \"newPf\": 7800,\n  \"newTax\": 7000,\n  \"newOvertimeRate\": 375,\n  \"effectiveDate\": \"2026-11-01\",\n  \"reason\": \"Annual Appraisal 2026\",\n  \"notes\": \"Promoted to Lead Architect with enhanced compensation band\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/payroll/salary-revision", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "salary-revision"] }
+          }
+        },
+        {
+          "name": "Get Employee Salary Revision History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/payroll/salary-revision/{{employeeId}}", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "salary-revision", "{{employeeId}}"] }
+          }
+        },
+        {
+          "name": "Generate Dynamic Payroll (Working Days, Holidays & Overtime)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"month\": 10,\n  \"year\": 2026\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/payroll/generate", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "generate"] }
+          }
+        },
+        {
+          "name": "Adjust Payroll Record (Bonus, Variable Pay, Deductions)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bonus\": 5000,\n  \"variablePay\": 3000,\n  \"otherDeductions\": 0,\n  \"remarks\": \"Exemplary client delivery reward\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/payroll/{{payrollId}}/adjust", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "{{payrollId}}", "adjust"] }
+          }
+        },
+        {
+          "name": "Download Itemized Salary Slip PDF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/payroll/{{payrollId}}/payslip", "host": ["{{baseUrl}}"], "path": ["api", "payroll", "{{payrollId}}", "payslip"] }
           }
         }
       ]

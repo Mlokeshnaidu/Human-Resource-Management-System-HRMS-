@@ -74,6 +74,7 @@ Leave_Report.csv
 Attendance_Report.csv
 *.tmp
 verify_all_features.ps1
+test_payroll_module.ps1
 
 # ------------------------------------------------------------------------------
 # 7. Local Databases & Dumps (Only version schema.sql and hrms_dump.sql)

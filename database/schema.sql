@@ -4,6 +4,11 @@
 -- Database Name: hrms_db
 -- =====================================================================
 
+CREATE TABLE `alembic_version` (
+  `version_num` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`version_num`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `attendance` (
   `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `employeeId` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -18,11 +23,19 @@ CREATE TABLE `attendance` (
   `notes` text COLLATE utf8mb4_unicode_ci,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
+  `shiftId` varchar(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `isLate` tinyint(1) NOT NULL DEFAULT '0',
+  `lateMinutes` int NOT NULL DEFAULT '0',
+  `isEarlyExit` tinyint(1) NOT NULL DEFAULT '0',
+  `earlyExitMinutes` int NOT NULL DEFAULT '0',
+  `overtimeHours` float NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_attendance_emp_date` (`employeeId`,`date`),
   KEY `ix_attendance_date` (`date`),
   KEY `ix_attendance_employeeId` (`employeeId`),
-  CONSTRAINT `attendance_ibfk_1` FOREIGN KEY (`employeeId`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+  KEY `fk_attendance_shift` (`shiftId`),
+  CONSTRAINT `attendance_ibfk_1` FOREIGN KEY (`employeeId`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_attendance_shift` FOREIGN KEY (`shiftId`) REFERENCES `shifts` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `audit_logs` (
@@ -39,6 +52,19 @@ CREATE TABLE `audit_logs` (
   PRIMARY KEY (`id`),
   KEY `ix_audit_logs_targetEntity` (`targetEntity`),
   KEY `ix_audit_logs_action` (`action`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `department_shifts` (
+  `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `department` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `shiftId` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `assignedBy` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_dept_shift` (`department`),
+  UNIQUE KEY `ix_department_shifts_department` (`department`),
+  KEY `shiftId` (`shiftId`),
+  CONSTRAINT `department_shifts_ibfk_1` FOREIGN KEY (`shiftId`) REFERENCES `shifts` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `documents` (
@@ -65,6 +91,46 @@ CREATE TABLE `email_logs` (
   `status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `sentAt` datetime NOT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `employee_salary_structures` (
+  `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `employeeId` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `baseSalary` float NOT NULL,
+  `hra` float NOT NULL,
+  `conveyanceAllowance` float NOT NULL,
+  `medicalAllowance` float NOT NULL,
+  `specialAllowance` float NOT NULL,
+  `pfDeduction` float NOT NULL,
+  `taxDeduction` float NOT NULL,
+  `professionalTax` float NOT NULL,
+  `overtimeHourlyRate` float NOT NULL,
+  `effectiveDate` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `isActive` tinyint(1) NOT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_emp_salary_structure` (`employeeId`),
+  UNIQUE KEY `ix_employee_salary_structures_employeeId` (`employeeId`),
+  CONSTRAINT `employee_salary_structures_ibfk_1` FOREIGN KEY (`employeeId`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `employee_shifts` (
+  `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `employeeId` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `shiftId` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `startDate` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `endDate` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `assignedBy` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `isActive` tinyint(1) NOT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_employee_shifts_shiftId` (`shiftId`),
+  KEY `ix_employee_shifts_employeeId` (`employeeId`),
+  CONSTRAINT `employee_shifts_ibfk_1` FOREIGN KEY (`employeeId`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `employee_shifts_ibfk_2` FOREIGN KEY (`shiftId`) REFERENCES `shifts` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `employees` (
@@ -95,6 +161,24 @@ CREATE TABLE `employees` (
   UNIQUE KEY `ix_employees_employeeCode` (`employeeCode`),
   KEY `ix_employees_department` (`department`),
   CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `holidays` (
+  `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `date` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `endDate` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `region` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `year` int NOT NULL,
+  `isOptional` tinyint(1) NOT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_holiday_date_name` (`date`,`name`),
+  KEY `ix_holidays_year` (`year`),
+  KEY `ix_holidays_date` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `leave_balances` (
@@ -133,6 +217,20 @@ CREATE TABLE `leave_requests` (
   CONSTRAINT `leave_requests_ibfk_1` FOREIGN KEY (`employeeId`) REFERENCES `employees` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `notification_preferences` (
+  `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `userId` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `emailEnabled` tinyint(1) NOT NULL,
+  `leaveAlerts` tinyint(1) NOT NULL,
+  `payrollAlerts` tinyint(1) NOT NULL,
+  `attendanceAlerts` tinyint(1) NOT NULL,
+  `announcements` tinyint(1) NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ix_notification_preferences_userId` (`userId`),
+  CONSTRAINT `notification_preferences_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `notifications` (
   `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `userId` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -141,6 +239,10 @@ CREATE TABLE `notifications` (
   `type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `isRead` tinyint(1) NOT NULL,
   `createdAt` datetime NOT NULL,
+  `targetRole` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'ALL',
+  `targetDepartment` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT 'ALL',
+  `isBroadcast` tinyint(1) NOT NULL DEFAULT '0',
+  `actionUrl` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `ix_notifications_userId` (`userId`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE
@@ -175,12 +277,58 @@ CREATE TABLE `payrolls` (
   `remarks` text COLLATE utf8mb4_unicode_ci,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
+  `standardWorkingDays` int NOT NULL DEFAULT '22',
+  `weekendDaysCount` int NOT NULL DEFAULT '8',
+  `holidaysCount` int NOT NULL DEFAULT '0',
+  `conveyanceAllowance` float NOT NULL DEFAULT '0',
+  `medicalAllowance` float NOT NULL DEFAULT '0',
+  `specialAllowance` float NOT NULL DEFAULT '0',
+  `overtimeHours` float NOT NULL DEFAULT '0',
+  `overtimePay` float NOT NULL DEFAULT '0',
+  `variablePay` float NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_payroll_emp_mo_yr` (`employeeId`,`month`,`year`),
   KEY `ix_payrolls_month` (`month`),
   KEY `ix_payrolls_employeeId` (`employeeId`),
   KEY `ix_payrolls_year` (`year`),
   CONSTRAINT `payrolls_ibfk_1` FOREIGN KEY (`employeeId`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `salary_revisions` (
+  `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `employeeId` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `previousGross` float NOT NULL,
+  `newGross` float NOT NULL,
+  `incrementPercentage` float NOT NULL,
+  `previousBase` float NOT NULL,
+  `newBase` float NOT NULL,
+  `effectiveDate` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `reason` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `revisedBy` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `createdAt` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_salary_revisions_employeeId` (`employeeId`),
+  CONSTRAINT `salary_revisions_ibfk_1` FOREIGN KEY (`employeeId`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `shifts` (
+  `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `startTime` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `endTime` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `gracePeriodMinutes` int NOT NULL,
+  `earlyExitThresholdMinutes` int NOT NULL,
+  `fullDayHours` float NOT NULL,
+  `halfDayHours` float NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `isDefault` tinyint(1) NOT NULL,
+  `isActive` tinyint(1) NOT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ix_shifts_code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users` (

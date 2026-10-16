@@ -11,6 +11,7 @@ import {
   UserCircle,
   LogOut,
   Building2,
+  Clock,
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab }) {
@@ -64,6 +65,24 @@ export default function Sidebar({ activeTab, setActiveTab }) {
         >
           <CalendarCheck size={16} />
           <span>Attendance</span>
+        </div>
+
+        <div
+          className={`nav-item ${activeTab === 'shifts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('shifts')}
+          id="nav-shifts"
+        >
+          <Clock size={16} />
+          <span>Shifts & Schedule</span>
+        </div>
+
+        <div
+          className={`nav-item ${activeTab === 'holidays' ? 'active' : ''}`}
+          onClick={() => setActiveTab('holidays')}
+          id="nav-holidays"
+        >
+          <CalendarDays size={16} />
+          <span>Holidays & Calendar</span>
         </div>
 
         <div

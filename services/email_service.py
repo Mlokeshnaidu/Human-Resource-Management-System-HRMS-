@@ -77,16 +77,16 @@ def send_notification_email(
         )
         db.add(email_log)
 
-        # 2. In-app notification if user_id is provided
+        # 2. In-app notification if user_id is provided (honoring user preferences)
         if user_id:
-            notif = Notification(
-                userId=user_id,
+            from services.notification_service import create_user_notification
+            create_user_notification(
+                db=db,
+                user_id=user_id,
                 title=subject,
-                message=f"Status update for {email_type.replace('_', ' ').lower()}",
-                type=email_type,
-                isRead=False
+                message=f"Update for {email_type.replace('_', ' ').title()}",
+                type=email_type
             )
-            db.add(notif)
 
         db.commit()
         print(f"[Email Service] Sent template email '{email_type}' to {to}")

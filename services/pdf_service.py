@@ -121,23 +121,35 @@ def generate_salary_slip_pdf(payroll, employee, user=None) -> bytes:
     elements.append(emp_table)
     elements.append(Spacer(1, 10))
 
-    # 4. Attendance Summary Bar
-    att_data = [[
-        Paragraph(f"<b>Total Days:</b> {payroll.totalWorkingDays}", normal_style),
-        Paragraph(f"<b>Present Days:</b> {payroll.presentDays}", normal_style),
-        Paragraph(f"<b>Paid Leaves:</b> {payroll.paidLeaveDays}", normal_style),
-        Paragraph(f"<font color='#dc2626'><b>Loss of Pay (LOP):</b> {payroll.lopDays} Days</font>", normal_style)
-    ]]
+    # 4. Attendance Summary Bar (Detailed with Standard Working Days, Holidays, and Overtime)
+    std_days = getattr(payroll, 'standardWorkingDays', 22) or 22
+    holidays = getattr(payroll, 'holidaysCount', 0) or 0
+    ot_hours = getattr(payroll, 'overtimeHours', 0.0) or 0.0
+    
+    att_data = [
+        [
+            Paragraph(f"<b>Month Days:</b> {payroll.totalWorkingDays}", normal_style),
+            Paragraph(f"<b>Working Days:</b> {std_days}", normal_style),
+            Paragraph(f"<b>Present:</b> {payroll.presentDays} Days", normal_style),
+            Paragraph(f"<b>Holidays:</b> {holidays} Days", normal_style),
+        ],
+        [
+            Paragraph(f"<b>Paid Leaves:</b> {payroll.paidLeaveDays} Days", normal_style),
+            Paragraph(f"<font color='#dc2626'><b>LOP:</b> {payroll.lopDays} Days</font>", normal_style),
+            Paragraph(f"<font color='#2563eb'><b>Overtime:</b> {ot_hours} Hrs</font>", normal_style),
+            Paragraph("<b>Status:</b> Approved", normal_style),
+        ]
+    ]
     att_table = Table(att_data, colWidths=[130, 130, 130, 132])
     att_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
         ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
     ]))
     elements.append(att_table)
-    elements.append(Spacer(1, 12))
+    elements.append(Spacer(1, 10))
 
     # 5. Earnings and Deductions Table with Indian Number Formatting
     fin_headers = [
@@ -149,22 +161,35 @@ def generate_salary_slip_pdf(payroll, employee, user=None) -> bytes:
         ]
     ]
 
+    conveyance = getattr(payroll, 'conveyanceAllowance', 0.0) or 0.0
+    medical = getattr(payroll, 'medicalAllowance', 0.0) or 0.0
+    special = getattr(payroll, 'specialAllowance', 0.0) or (payroll.allowances - conveyance - medical if payroll.allowances >= conveyance + medical else payroll.allowances)
+    ot_pay = getattr(payroll, 'overtimePay', 0.0) or 0.0
+    variable_pay = getattr(payroll, 'variablePay', 0.0) or 0.0
+    bonus_total = (payroll.bonus or 0.0) + variable_pay
+
     earnings_rows = [
         ("Base Salary", format_inr(payroll.baseSalary)),
         ("House Rent Allowance (HRA)", format_inr(payroll.hra)),
-        ("Special Allowances", format_inr(payroll.allowances)),
-        ("Performance Bonus", format_inr(payroll.bonus)),
+        ("Conveyance Allowance", format_inr(conveyance)),
+        ("Medical Allowance", format_inr(medical)),
+        ("Special Allowance", format_inr(special)),
+        (f"Overtime Pay ({ot_hours} hrs)", format_inr(ot_pay)),
+        ("Performance Bonus & Variable", format_inr(bonus_total)),
     ]
 
     deductions_rows = [
         ("Provident Fund (PF)", format_inr(payroll.pf)),
         ("Income Tax (TDS)", format_inr(payroll.tax)),
         ("Loss of Pay (LOP) Deduction", format_inr(payroll.lopDeduction)),
-        ("Other Deductions", format_inr(payroll.otherDeductions)),
+        ("Other / Professional Tax", format_inr(payroll.otherDeductions)),
+        ("-", "-"),
+        ("-", "-"),
+        ("-", "-"),
     ]
 
-    fin_data = fin_headers
-    for i in range(4):
+    fin_data = list(fin_headers)
+    for i in range(len(earnings_rows)):
         e_lbl, e_val = earnings_rows[i]
         d_lbl, d_val = deductions_rows[i]
         fin_data.append([

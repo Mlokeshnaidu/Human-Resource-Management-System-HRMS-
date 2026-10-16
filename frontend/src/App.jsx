@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import Attendance from './pages/Attendance';
+import Holidays from './pages/Holidays';
+import Shifts from './pages/Shifts';
 import Leaves from './pages/Leaves';
 import Payroll from './pages/Payroll';
 import Reports from './pages/Reports';
@@ -47,7 +49,9 @@ function MainLayout() {
       case 'dashboard':
         return {
           title: isAdminOrHr ? 'Administrative Overview Dashboard' : 'My Employee Workplace',
-          subtitle: isAdminOrHr ? 'Workforce metrics, live attendance summary, and quick management' : 'Personal punch clock, leave balances, and salary summary',
+          subtitle: isAdminOrHr
+            ? 'Workforce metrics, live attendance summary, and quick management'
+            : 'Personal punch clock, assigned shift, leave balances, and salary summary',
         };
       case 'employees':
         return {
@@ -57,7 +61,17 @@ function MainLayout() {
       case 'attendance':
         return {
           title: 'Attendance & Time Tracking',
-          subtitle: 'Daily check-in / check-out records, working hours calculation, and administrative overrides',
+          subtitle: 'Daily check-in / check-out records, shift compliance, working hours, and administrative overrides',
+        };
+      case 'shifts':
+        return {
+          title: 'Shift & Work Schedule Management',
+          subtitle: 'Define work shifts, department & personnel assignments, and shift-wise attendance reports',
+        };
+      case 'holidays':
+        return {
+          title: 'Holiday & Calendar Management',
+          subtitle: 'Centralized company, regional, and floating holiday schedules integrated with attendance',
         };
       case 'leaves':
         return {
@@ -67,12 +81,12 @@ function MainLayout() {
       case 'payroll':
         return {
           title: 'Payroll Processing & Salary Slips',
-          subtitle: 'Automated monthly compensation generation, LOP deductions, salary locking, and PDF generation',
+          subtitle: 'Automated compensation, salary structures, compensation revisions, LOP deductions, and PDF slips',
         };
       case 'reports':
         return {
           title: 'Reports & Analytics Intelligence',
-          subtitle: 'Attendance rates, leave utilization analytics, and CSV/PDF data exports',
+          subtitle: 'Attendance rates, shift analytics, leave utilization, and CSV/PDF data exports',
         };
       case 'audit':
         return {
@@ -100,6 +114,8 @@ function MainLayout() {
           {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
           {activeTab === 'employees' && isAdminOrHr && <Employees />}
           {activeTab === 'attendance' && <Attendance />}
+          {activeTab === 'shifts' && <Shifts />}
+          {activeTab === 'holidays' && <Holidays />}
           {activeTab === 'leaves' && <Leaves />}
           {activeTab === 'payroll' && <Payroll />}
           {activeTab === 'reports' && isAdminOrHr && <Reports />}

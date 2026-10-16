@@ -22,6 +22,7 @@ class User(Base):
 
     employee = relationship("Employee", back_populates="user", uselist=False, cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    notification_preference = relationship("NotificationPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 class Employee(Base):
@@ -56,6 +57,9 @@ class Employee(Base):
     leave_balances = relationship("LeaveBalance", back_populates="employee", cascade="all, delete-orphan")
     leave_requests = relationship("LeaveRequest", back_populates="employee", cascade="all, delete-orphan")
     payrolls = relationship("Payroll", back_populates="employee", cascade="all, delete-orphan")
+    salary_structure = relationship("EmployeeSalaryStructure", uselist=False, cascade="all, delete-orphan")
+    salary_revisions = relationship("SalaryRevision", cascade="all, delete-orphan")
+    shifts = relationship("EmployeeShift", cascade="all, delete-orphan")
 
 
 class Document(Base):

@@ -9,6 +9,8 @@ from .reports import router as reports_router
 from .audit import router as audit_router
 from .notifications import router as notifications_router
 from .health import router as health_router
+from .holidays import router as holidays_router
+from .shifts import router as shifts_router
 
 all_routers = [
     auth_router,
@@ -22,6 +24,8 @@ all_routers = [
     audit_router,
     notifications_router,
     health_router,
+    holidays_router,
+    shifts_router,
 ]
 
 __all__ = [
@@ -36,5 +40,7 @@ __all__ = [
     "audit_router",
     "notifications_router",
     "health_router",
+    "holidays_router",
+    "shifts_router",
     "all_routers",
 ]
